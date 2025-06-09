@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     console.log(`[API Coletores] 📍 Coletor ${coletorId} vai para linha ${linha}`);
 
     // ✅ MAPEAMENTO CORRETO - Ajustado para incluir manutenção
-    const atualizacoes = [];
+    const atualizacoes: { range: string; value: any }[] = [];
     
     // COLUNA C: Status como TRUE/FALSE ou string para manutenção
     if (dados.status) {
@@ -47,11 +47,13 @@ export async function POST(request: NextRequest) {
         statusValue = 'MANUTENÇÃO'; // Usar string para identificar manutenção
       }
       
-      atualizacoes.push({
-        range: `Sheet1!C${linha}`,
-        value: statusValue
-      });
-      console.log(`[API Coletores] 🔄 Status: ${dados.status} → ${statusValue}`);
+      if (statusValue !== undefined) {
+        atualizacoes.push({
+          range: `Sheet1!C${linha}`,
+          value: statusValue
+        });
+        console.log(`[API Coletores] 🔄 Status: ${dados.status} → ${statusValue}`);
+      }
     }
     
     // OUTRAS COLUNAS: Corrigir nomes dos campos
@@ -64,14 +66,18 @@ export async function POST(request: NextRequest) {
       observacoes: `I${linha}`            // Coluna I: Observações
     };
 
+    // Definir tipo para as chaves de mapeamentoColunas
+    type CamposValidos = keyof typeof mapeamentoColunas;
+
     // Adicionar atualizações para cada campo
     for (const [campo, valor] of Object.entries(dados)) {
-      if (campo !== 'status' && mapeamentoColunas[campo]) {
+      const campoValido = campo as CamposValidos;
+      if (campo !== 'status' && mapeamentoColunas[campoValido]) {
         atualizacoes.push({
-          range: `Sheet1!${mapeamentoColunas[campo]}`,
+          range: `Sheet1!${mapeamentoColunas[campoValido]}`,
           value: valor || '' // Garantir que valor vazio seja string vazia
         });
-        console.log(`[API Coletores] 📝 Campo ${campo}: ${valor} → ${mapeamentoColunas[campo]}`);
+        console.log(`[API Coletores] 📝 Campo ${campo}: ${valor} → ${mapeamentoColunas[campoValido]}`);
       }
     }
 
