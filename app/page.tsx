@@ -57,7 +57,7 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Acesso Administrativo</h1>
-          <p className="text-gray-300">Apenas administradores podem marcar equipamentos em manutenção</p>
+          <p className="text-gray-300">Apenas administradores podem realizar operações administrativas</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">
@@ -134,11 +134,7 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-            <p className="text-xs text-gray-600">
-              <strong>Credenciais de teste:</strong><br />
-              Email: admin@coletores.com<br />
-              Senha: admin123
-            </p>
+           
           </div>
         </div>
       </div>
@@ -202,6 +198,17 @@ export default function ColetorAutoatendimento() {
            (coletor.nomeColaborador && coletor.nomeColaborador.toLowerCase().includes(busca.toLowerCase()));
   });
 
+  const handleDevolverClick = () => {
+    if (!isAdmin) {
+      setMostrarLoginAdmin(true);
+    } else {
+      setAcao('devolver');
+      setColetorSelecionado(null);
+      setBusca('');
+      setObservacoes('');
+    }
+  };
+
   const handleManutencaoClick = () => {
     if (!isAdmin) {
       setMostrarLoginAdmin(true);
@@ -217,7 +224,13 @@ export default function ColetorAutoatendimento() {
     setIsAdmin(true);
     setAdminUser(sessionStorage.getItem('admin_user') || '');
     setMostrarLoginAdmin(false);
-    setAcao('manutencao');
+    
+    // Manter a ação desejada quando o login for bem-sucedido
+    // Por padrão, vamos para devolução se não estiver em manutenção
+    if (acao === 'retirar') {
+      setAcao('devolver');
+    }
+    
     setColetorSelecionado(null);
     setBusca('');
     setObservacoes('');
@@ -245,15 +258,14 @@ export default function ColetorAutoatendimento() {
       return;
     }
 
-    if (acao === 'manutencao') {
-      if (!isAdmin) {
-        setMensagem({tipo: 'erro', texto: 'Apenas administradores podem marcar equipamentos em manutenção'});
-        return;
-      }
-      if (!observacoes.trim()) {
-        setMensagem({tipo: 'erro', texto: 'Descreva o problema do equipamento'});
-        return;
-      }
+    if ((acao === 'devolver' || acao === 'manutencao') && !isAdmin) {
+      setMensagem({tipo: 'erro', texto: 'Apenas administradores podem realizar esta operação'});
+      return;
+    }
+
+    if (acao === 'manutencao' && !observacoes.trim()) {
+      setMensagem({tipo: 'erro', texto: 'Descreva o problema do equipamento'});
+      return;
     }
 
     setProcessando(true);
@@ -338,7 +350,7 @@ export default function ColetorAutoatendimento() {
                   🎯 Sistema de Coletores
                 </h1>
                 <p className="text-gray-600">
-                  Retire, devolva ou marque equipamentos para manutenção
+                  Retire equipamentos ou acesse funções administrativas
                 </p>
               </div>
 
@@ -433,19 +445,17 @@ export default function ColetorAutoatendimento() {
               📤 Retirar Coletor
             </button>
             <button
-              onClick={() => {
-                setAcao('devolver');
-                setColetorSelecionado(null);
-                setBusca('');
-                setObservacoes('');
-              }}
-              className={`py-3 px-6 rounded-lg font-medium transition-all ${
+              onClick={handleDevolverClick}
+              className={`py-3 px-6 rounded-lg font-medium transition-all relative ${
                 acao === 'devolver'
                   ? 'bg-green-600 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               📥 Devolver Coletor
+              {!isAdmin && (
+                <Shield size={16} className="absolute top-2 right-2 text-red-500" />
+              )}
             </button>
             <button
               onClick={handleManutencaoClick}
@@ -461,6 +471,18 @@ export default function ColetorAutoatendimento() {
               )}
             </button>
           </div>
+
+          {/* Aviso para devolução */}
+          {acao === 'devolver' && !isAdmin && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Shield className="text-green-600" size={20} />
+                <span className="text-green-800 font-medium">
+                  Acesso restrito: Apenas administradores podem processar devoluções de equipamentos
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Aviso para manutenção */}
           {acao === 'manutencao' && !isAdmin && (
@@ -478,7 +500,7 @@ export default function ColetorAutoatendimento() {
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {acao === 'retirar' && '🔍 Buscar coletor disponível'}
-              {acao === 'devolver' && '🔍 Buscar por número do coletor ou sua matrícula'}
+              {acao === 'devolver' && '🔍 Buscar por número do coletor ou matrícula do colaborador'}
               {acao === 'manutencao' && '🔍 Buscar coletor para manutenção'}
             </label>
             <input
@@ -490,10 +512,10 @@ export default function ColetorAutoatendimento() {
                 acao === 'retirar' 
                   ? "Ex: COL001, COL015..." 
                   : acao === 'devolver'
-                  ? "Ex: COL001 ou sua matrícula 12345..."
+                  ? "Ex: COL001 ou matrícula 12345..."
                   : "Ex: COL001 (equipamento com problema)"
               }
-              disabled={acao === 'manutencao' && !isAdmin}
+              disabled={(acao === 'devolver' || acao === 'manutencao') && !isAdmin}
             />
           </div>
 
@@ -501,18 +523,21 @@ export default function ColetorAutoatendimento() {
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               {acao === 'retirar' && `📱 Coletores Disponíveis (${coletoresFiltrados.length})`}
-              {acao === 'devolver' && `🔄 Seus Coletores em Uso (${coletoresFiltrados.length})`}
+              {acao === 'devolver' && `🔄 Coletores em Uso (${coletoresFiltrados.length})`}
               {acao === 'manutencao' && `🔧 Coletores para Manutenção (${coletoresFiltrados.length})`}
             </h3>
             
-            {(acao === 'manutencao' && !isAdmin) ? (
+            {((acao === 'devolver' || acao === 'manutencao') && !isAdmin) ? (
               <div className="text-center py-8 bg-red-50 rounded-lg border-2 border-dashed border-red-200">
                 <Shield className="mx-auto text-red-400 mb-4" size={48} />
                 <p className="text-red-600 text-lg font-medium mb-2">
                   Acesso Restrito
                 </p>
                 <p className="text-red-500 mb-4">
-                  Faça login como administrador para marcar equipamentos em manutenção
+                  {acao === 'devolver' 
+                    ? 'Faça login como administrador para processar devoluções'
+                    : 'Faça login como administrador para marcar equipamentos em manutenção'
+                  }
                 </p>
                 <button
                   onClick={() => setMostrarLoginAdmin(true)}
@@ -530,7 +555,7 @@ export default function ColetorAutoatendimento() {
                   {acao === 'retirar' 
                     ? 'Nenhum coletor disponível no momento'
                     : acao === 'devolver'
-                    ? 'Você não possui coletores para devolver'
+                    ? 'Nenhum coletor em uso encontrado'
                     : 'Nenhum coletor encontrado para manutenção'
                   }
                 </p>
@@ -547,11 +572,11 @@ export default function ColetorAutoatendimento() {
                   <button
                     key={coletor.id}
                     onClick={() => setColetorSelecionado(coletor)}
-                    disabled={acao === 'manutencao' && !isAdmin}
+                    disabled={(acao === 'devolver' || acao === 'manutencao') && !isAdmin}
                     className={`p-4 rounded-lg border-2 transition-all text-center ${
                       coletorSelecionado?.id === coletor.id
                         ? 'border-blue-500 bg-blue-50 shadow-lg'
-                        : acao === 'manutencao' && !isAdmin
+                        : (acao === 'devolver' || acao === 'manutencao') && !isAdmin
                         ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-50'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                     }`}
@@ -581,7 +606,7 @@ export default function ColetorAutoatendimento() {
           </div>
 
           {/* Formulário de dados */}
-          {coletorSelecionado && (acao !== 'manutencao' || isAdmin) && (
+          {coletorSelecionado && ((acao === 'retirar') || (acao === 'devolver' && isAdmin) || (acao === 'manutencao' && isAdmin)) && (
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="mb-4">
                 <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -600,8 +625,8 @@ export default function ColetorAutoatendimento() {
                   </p>
                 )}
 
-                {/* Badge de admin para manutenção */}
-                {acao === 'manutencao' && isAdmin && (
+                {/* Badge de admin para devolução e manutenção */}
+                {(acao === 'devolver' || acao === 'manutencao') && isAdmin && (
                   <div className="inline-flex items-center bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm mb-4">
                     <Shield size={14} className="mr-2" />
                     Logado como Administrador ({adminUser})
@@ -732,10 +757,14 @@ export default function ColetorAutoatendimento() {
               </ol>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">📥 Para Devolver:</h4>
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                📥 Para Devolver:
+                <Shield size={16} className="ml-2 text-green-500" />
+              </h4>
               <ol className="list-decimal list-inside space-y-1">
+                <li><strong>Faça login como administrador</strong></li>
                 <li>Clique em "Devolver Coletor"</li>
-                <li>Busque pelo número ou sua matrícula</li>
+                <li>Busque pelo número ou matrícula</li>
                 <li>Selecione o coletor a devolver</li>
                 <li>Confirme a devolução</li>
                 <li>Pronto! Equipamento liberado</li>
@@ -762,7 +791,7 @@ export default function ColetorAutoatendimento() {
               <strong>⚠️ Importante:</strong> Sempre confirme o número do coletor antes de qualquer ação. 
               <strong className="flex items-center mt-1">
                 <Shield size={14} className="mr-1" />
-                Funcionalidade de manutenção restrita apenas a administradores autorizados.
+                Funcionalidades de devolução e manutenção restritas apenas a administradores autorizados.
               </strong>
             </p>
           </div>
@@ -776,6 +805,9 @@ export default function ColetorAutoatendimento() {
             <div className="text-sm text-red-700">
               <p><strong>Email:</strong> admin@coletores.com</p>
               <p><strong>Senha:</strong> admin123</p>
+              <p className="mt-2 text-xs">
+                <strong>Acesso liberado para:</strong> Devolução de equipamentos e marcação para manutenção
+              </p>
             </div>
           </div>
         </div>
