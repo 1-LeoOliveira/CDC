@@ -19,6 +19,19 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [lembrarLogin, setLembrarLogin] = useState(false);
+
+  // Carregar credenciais salvas ao abrir o modal
+  useEffect(() => {
+    const emailSalvo = localStorage.getItem('admin_email_salvo');
+    const senhaSalva = localStorage.getItem('admin_senha_salva');
+    
+    if (emailSalvo && senhaSalva) {
+      setEmail(emailSalvo);
+      setSenha(senhaSalva);
+      setLembrarLogin(true);
+    }
+  }, []);
 
   const handleLogin = () => {
     if (!email || !senha) {
@@ -32,6 +45,15 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
     // Simulação de autenticação
     setTimeout(() => {
       if (email === ADMIN_CREDENTIALS.email && senha === ADMIN_CREDENTIALS.senha) {
+        // Salvar ou remover credenciais baseado na opção "lembrar"
+        if (lembrarLogin) {
+          localStorage.setItem('admin_email_salvo', email);
+          localStorage.setItem('admin_senha_salva', senha);
+        } else {
+          localStorage.removeItem('admin_email_salvo');
+          localStorage.removeItem('admin_senha_salva');
+        }
+        
         // Salvar sessão de admin (apenas para manutenção)
         sessionStorage.setItem('admin_manutencao', 'true');
         sessionStorage.setItem('admin_user', email);
@@ -70,7 +92,7 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="admin@coletores.com"
+                placeholder="exemplo@controle.com"
                 disabled={loading}
               />
             </div>
@@ -90,12 +112,27 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black"
                   disabled={loading}
                 >
                   {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+            </div>
+
+            {/* Checkbox para lembrar login */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="lembrarLogin"
+                checked={lembrarLogin}
+                onChange={(e) => setLembrarLogin(e.target.checked)}
+                className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                disabled={loading}
+              />
+              <label htmlFor="lembrarLogin" className="ml-2 text-sm text-gray-700 cursor-pointer">
+                🔐 Lembrar minhas credenciais neste dispositivo
+              </label>
             </div>
 
             {error && (
@@ -131,10 +168,6 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
                 )}
               </button>
             </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-           
           </div>
         </div>
       </div>
@@ -239,6 +272,17 @@ export default function ColetorAutoatendimento() {
   const handleAdminLogout = () => {
     sessionStorage.removeItem('admin_manutencao');
     sessionStorage.removeItem('admin_user');
+    
+    // Perguntar se deseja manter credenciais salvas
+    const manterCredenciais = localStorage.getItem('admin_email_salvo');
+    if (manterCredenciais) {
+      const confirmar = window.confirm('Deseja manter suas credenciais salvas para próximos logins?');
+      if (!confirmar) {
+        localStorage.removeItem('admin_email_salvo');
+        localStorage.removeItem('admin_senha_salva');
+      }
+    }
+    
     setIsAdmin(false);
     setAdminUser('');
     setAcao('retirar');
@@ -807,6 +851,9 @@ export default function ColetorAutoatendimento() {
               <p><strong>Senha:</strong> admin123</p>
               <p className="mt-2 text-xs">
                 <strong>Acesso liberado para:</strong> Devolução de equipamentos e marcação para manutenção
+              </p>
+              <p className="mt-1 text-xs">
+                💡 <strong>Dica:</strong> Use a opção "Lembrar credenciais" para facilitar próximos acessos
               </p>
             </div>
           </div>
