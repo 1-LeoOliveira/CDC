@@ -91,7 +91,7 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                 placeholder="exemplo@controle.com"
                 disabled={loading}
               />
@@ -105,7 +105,7 @@ function LoginAdmin({ onLoginSuccess, onCancel }: {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="Digite sua senha"
                   disabled={loading}
                 />
