@@ -120,7 +120,7 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
           return null;
         }
       })
-      .filter((coletor): coletor is Coletor => coletor !== null);
+      .filter((coletor: Coletor | null): coletor is Coletor => coletor !== null);
     
     console.log(`[Coletores] ✅ ${coletores.length} coletores carregados da planilha`);
     
