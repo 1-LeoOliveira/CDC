@@ -1,4 +1,4 @@
-// utils/coletoresSheets.ts - VERSÃO COM MANUTENÇÃO
+// utils/coletoresSheets.ts - VERSÃO COM MANUTENÇÃO - CORRIGIDA
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -71,7 +71,7 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
     console.log('[Coletores] 📋 Segunda linha de dados:', linhas[1]);
     
     const coletores: Coletor[] = linhas
-      .map((linha: any[], index: number) => {
+      .map((linha: any[], index: number): Coletor | null => {
         try {
           if (!linha || linha.length < 3) return null;
           
