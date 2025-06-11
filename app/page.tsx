@@ -838,25 +838,7 @@ export default function ColetorAutoatendimento() {
                 Funcionalidades de devolução e manutenção restritas apenas a administradores autorizados.
               </strong>
             </p>
-          </div>
-
-          {/* Credenciais de teste para administrador */}
-          <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
-            <h4 className="text-sm font-medium text-red-800 mb-2 flex items-center">
-              <Shield size={14} className="mr-2" />
-              Credenciais de Teste - Administrador:
-            </h4>
-            <div className="text-sm text-red-700">
-              <p><strong>Email:</strong> admin@coletores.com</p>
-              <p><strong>Senha:</strong> admin123</p>
-              <p className="mt-2 text-xs">
-                <strong>Acesso liberado para:</strong> Devolução de equipamentos e marcação para manutenção
-              </p>
-              <p className="mt-1 text-xs">
-                💡 <strong>Dica:</strong> Use a opção "Lembrar credenciais" para facilitar próximos acessos
-              </p>
-            </div>
-          </div>
+          </div>         
         </div>
       </div>
     </div>
