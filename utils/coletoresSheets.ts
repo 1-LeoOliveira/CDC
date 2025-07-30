@@ -1,4 +1,4 @@
-// utils/coletoresSheets.ts - VERSÃO COM MANUTENÇÃO - CORRIGIDA
+// utils/coletoresSheets.ts - VERSÃO SIMPLIFICADA SEM SETORES
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -7,9 +7,8 @@ export interface Coletor {
   numero: string;
   status: 'disponivel' | 'emprestado' | 'manutencao';
   statusOriginal?: any; // Para debug - valor original da planilha
-  colaborador?: string;
+  setor?: string; // Mudado de colaborador para setor
   nomeColaborador?: string;
-  turno?: string;
   dataRetirada?: string;
   dataPrevisaoRetorno?: string;
   observacoes?: string;
@@ -22,10 +21,10 @@ const SPREADSHEET_ID = '1E2ffKxsUF5r3TMZMcS-eGvHxwlnK2GRpxQbrYejVonI';
 // 🏠 DADOS DE FALLBACK LOCAL - Para testes sem internet
 const COLETORES_FALLBACK: Record<number, Coletor> = {
   1: { id: 1, numero: 'COL001', status: 'disponivel' },
-  2: { id: 2, numero: 'COL002', status: 'emprestado', colaborador: '12345', nomeColaborador: 'João Silva', turno: 'Manhã', dataRetirada: '2025-06-09T08:00' },
+  2: { id: 2, numero: 'COL002', status: 'emprestado', setor: 'Separação', nomeColaborador: 'João Silva', dataRetirada: '2025-06-09T08:00' },
   3: { id: 3, numero: 'COL003', status: 'disponivel' },
   4: { id: 4, numero: 'COL004', status: 'manutencao', observacoes: 'Tela quebrada' },
-  5: { id: 5, numero: 'COL005', status: 'emprestado', colaborador: '67890', nomeColaborador: 'Maria Santos', turno: 'Tarde', dataRetirada: '2025-06-09T14:00' },
+  5: { id: 5, numero: 'COL005', status: 'emprestado', setor: 'Conferência', nomeColaborador: 'Maria Santos', dataRetirada: '2025-06-09T14:00' },
   6: { id: 6, numero: 'COL006', status: 'disponivel' },
   7: { id: 7, numero: 'COL007', status: 'disponivel' },
   8: { id: 8, numero: 'COL008', status: 'manutencao', observacoes: 'Não liga' },
@@ -39,7 +38,7 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
     console.log('[Coletores] 🔄 Buscando dados da planilha...');
     console.log('[Coletores] 📋 Planilha ID:', SPREADSHEET_ID);
     
-    const range = 'Sheet1!A:I';
+    const range = 'Sheet1!A:H'; // Removido coluna I (turno)
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${GOOGLE_SHEETS_API_KEY}`;
     
     console.log('[Coletores] 🌐 URL da requisição:', url);
@@ -78,13 +77,12 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
           const id = parseInt(linha[0] || '0');
           const numero = (linha[1] || '').toString().trim();
           const statusRaw = linha[2]; // Valor original da planilha
-          const status = parseStatus(statusRaw, linha[8]); // Passa observações para ajudar na decisão
-          const colaborador = linha[3] ? linha[3].toString().trim() : undefined;
+          const status = parseStatus(statusRaw, linha[7]); // Passa observações para ajudar na decisão
+          const setor = linha[3] ? linha[3].toString().trim() : undefined; // Mudado de colaborador para setor
           const nomeColaborador = linha[4] ? linha[4].toString().trim() : undefined;
-          const turno = linha[5] ? linha[5].toString().trim() : undefined;
-          const dataRetirada = linha[6] ? linha[6].toString().trim() : undefined;
-          const dataPrevisaoRetorno = linha[7] ? linha[7].toString().trim() : undefined;
-          const observacoes = linha[8] ? linha[8].toString().trim() : undefined;
+          const dataRetirada = linha[5] ? linha[5].toString().trim() : undefined;
+          const dataPrevisaoRetorno = linha[6] ? linha[6].toString().trim() : undefined;
+          const observacoes = linha[7] ? linha[7].toString().trim() : undefined;
           
           // Log detalhado para as primeiras 3 linhas
           if (index < 3) {
@@ -94,7 +92,7 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
               statusRaw,
               statusRawType: typeof statusRaw,
               statusParsed: status,
-              colaborador,
+              setor,
               nomeColaborador,
               observacoes
             });
@@ -107,9 +105,8 @@ async function buscarColetoresDaPlanilha(): Promise<Coletor[]> {
             numero,
             status,
             statusOriginal: statusRaw, // Manter valor original para debug
-            colaborador: colaborador || undefined,
+            setor: setor || undefined,
             nomeColaborador: nomeColaborador || undefined,
-            turno: turno || undefined,
             dataRetirada: dataRetirada || undefined,
             dataPrevisaoRetorno: dataPrevisaoRetorno || undefined,
             observacoes: observacoes || undefined
@@ -244,12 +241,11 @@ export function useColetores() {
     }
   }, []);
 
-  // 📤 Função para retirar coletor
+  // 📤 Função para retirar coletor (ATUALIZADA PARA SETOR)
   const retirarColetor = useCallback(async (
     coletorId: number, 
-    colaborador: string, 
+    setor: string, 
     nomeColaborador: string, 
-    turno: string,
     observacoes?: string
   ) => {
     try {
@@ -266,9 +262,8 @@ export function useColetores() {
           ? {
               ...coletor,
               status: 'emprestado' as const,
-              colaborador,
+              setor,
               nomeColaborador,
-              turno,
               dataRetirada: agora,
               dataPrevisaoRetorno: previsaoRetorno.toISOString(),
               observacoes
@@ -279,9 +274,8 @@ export function useColetores() {
       // Sincronizar com Google Sheets
       await sincronizarComPlanilha(coletorId, {
         status: 'emprestado',
-        colaborador,
+        setor,
         nomeColaborador,  
-        turno,
         dataRetirada: agora,
         dataPrevisaoRetorno: previsaoRetorno.toISOString(),
         observacoes
@@ -304,9 +298,8 @@ export function useColetores() {
           ? {
               ...coletor,
               status: 'disponivel' as const,
-              colaborador: undefined,
+              setor: undefined,
               nomeColaborador: undefined,
-              turno: undefined,
               dataRetirada: undefined,
               dataPrevisaoRetorno: undefined,
               observacoes: undefined
@@ -332,9 +325,8 @@ export function useColetores() {
           ? {
               ...coletor,
               status: 'disponivel' as const,
-              colaborador: undefined,
+              setor: undefined,
               nomeColaborador: undefined,
-              turno: undefined,
               dataRetirada: undefined,
               dataPrevisaoRetorno: undefined,
               observacoes
@@ -345,9 +337,8 @@ export function useColetores() {
       // Sincronizar com Google Sheets
       await sincronizarComPlanilha(coletorId, {
         status: 'disponivel',
-        colaborador: '',
+        setor: '',
         nomeColaborador: '',
-        turno: '',
         dataRetirada: '',
         dataPrevisaoRetorno: '',
         observacoes: observacoes || ''
@@ -387,9 +378,8 @@ export function useColetores() {
               status: 'manutencao' as const, 
               observacoes,
               // Limpar dados de empréstimo se houver
-              colaborador: undefined,
+              setor: undefined,
               nomeColaborador: undefined,
-              turno: undefined,
               dataRetirada: undefined,
               dataPrevisaoRetorno: undefined
             }
@@ -399,9 +389,8 @@ export function useColetores() {
       // ✅ Para manutenção, vamos usar um valor especial na planilha
       await sincronizarComPlanilha(coletorId, {
         status: 'manutencao', // Nosso código vai tratar isso especialmente
-        colaborador: '',
+        setor: '',
         nomeColaborador: '',
-        turno: '',
         dataRetirada: '',
         dataPrevisaoRetorno: '',
         observacoes
@@ -509,17 +498,17 @@ async function sincronizarComPlanilha(coletorId: number, dados: Partial<Coletor>
   }
 }
 
-// 📊 Função para obter coletores por turno
-export function getColetoresPorTurno(coletores: Coletor[]) {
-  const turnos = ['Manhã', 'Tarde', 'Noite'];
-  
-  return turnos.map(turno => ({
-    turno,
-    coletores: coletores.filter(c => c.turno === turno),
+// 📊 Função para obter estatísticas básicas
+export function getEstatisticas(coletores: Coletor[]) {
+  return {
+    total: coletores.length,
     disponiveis: coletores.filter(c => c.status === 'disponivel').length,
-    emprestados: coletores.filter(c => c.turno === turno && c.status === 'emprestado').length,
-    manutencao: coletores.filter(c => c.status === 'manutencao').length
-  }));
+    emprestados: coletores.filter(c => c.status === 'emprestado').length,
+    manutencao: coletores.filter(c => c.status === 'manutencao').length,
+    taxaOcupacao: coletores.length > 0 
+      ? Math.round((coletores.filter(c => c.status === 'emprestado').length / coletores.length) * 100)
+      : 0
+  };
 }
 
 // 📋 Função para obter coletores em manutenção
