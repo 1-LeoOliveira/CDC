@@ -189,9 +189,8 @@ export default function ColetorAutoatendimento() {
 
   const [acao, setAcao] = useState<'retirar' | 'devolver' | 'manutencao'>('retirar');
   const [busca, setBusca] = useState('');
-  const [matricula, setMatricula] = useState('');
+  const [setor, setSetor] = useState('');
   const [nome, setNome] = useState('');
-  const [turno, setTurno] = useState('Manhã');
   const [observacoes, setObservacoes] = useState('');
   const [coletorSelecionado, setColetorSelecionado] = useState<Coletor | null>(null);
   const [processando, setProcessando] = useState(false);
@@ -227,7 +226,7 @@ export default function ColetorAutoatendimento() {
   }).filter(coletor => {
     if (!busca) return true;
     return coletor.numero.toLowerCase().includes(busca.toLowerCase()) ||
-           (coletor.colaborador && coletor.colaborador.includes(busca)) ||
+           (coletor.colaborador && coletor.colaborador.toLowerCase().includes(busca.toLowerCase())) ||
            (coletor.nomeColaborador && coletor.nomeColaborador.toLowerCase().includes(busca.toLowerCase()));
   });
 
@@ -297,8 +296,8 @@ export default function ColetorAutoatendimento() {
       return;
     }
 
-    if (acao === 'retirar' && (!matricula || !nome)) {
-      setMensagem({tipo: 'erro', texto: 'Preencha sua matrícula e nome'});
+    if (acao === 'retirar' && (!setor || !nome)) {
+      setMensagem({tipo: 'erro', texto: 'Preencha seu setor e nome'});
       return;
     }
 
@@ -317,7 +316,7 @@ export default function ColetorAutoatendimento() {
 
     try {
       if (acao === 'retirar') {
-        await retirarColetor(coletorSelecionado.id, matricula, nome, turno);
+        await retirarColetor(coletorSelecionado.id, setor, nome);
         setMensagem({
           tipo: 'sucesso', 
           texto: `Coletor ${coletorSelecionado.numero} retirado com sucesso!`
@@ -339,7 +338,7 @@ export default function ColetorAutoatendimento() {
       // Limpar formulário
       setColetorSelecionado(null);
       setBusca('');
-      setMatricula('');
+      setSetor('');
       setNome('');
       setObservacoes('');
       
@@ -544,7 +543,7 @@ export default function ColetorAutoatendimento() {
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {acao === 'retirar' && '🔍 Buscar coletor disponível'}
-              {acao === 'devolver' && '🔍 Buscar por número do coletor ou matrícula do colaborador'}
+              {acao === 'devolver' && '🔍 Buscar por número do coletor ou setor do colaborador'}
               {acao === 'manutencao' && '🔍 Buscar coletor para manutenção'}
             </label>
             <input
@@ -556,7 +555,7 @@ export default function ColetorAutoatendimento() {
                 acao === 'retirar' 
                   ? "Ex: COL001, COL015..." 
                   : acao === 'devolver'
-                  ? "Ex: COL001 ou matrícula 12345..."
+                  ? "Ex: COL001 ou setor Separação..."
                   : "Ex: COL001 (equipamento com problema)"
               }
               disabled={(acao === 'devolver' || acao === 'manutencao') && !isAdmin}
@@ -683,16 +682,22 @@ export default function ColetorAutoatendimento() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sua Matrícula *
+                      Seu Setor *
                     </label>
-                    <input
-                      type="text"
-                      value={matricula}
-                      onChange={(e) => setMatricula(e.target.value)}
+                    <select
+                      value={setor}
+                      onChange={(e) => setSetor(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ex: 12345"
                       required
-                    />
+                    >
+                      <option value="">Selecione seu setor...</option>
+                      <option value="Separação">📦 Separação</option>
+                      <option value="Conferência">✅ Conferência</option>
+                      <option value="Recebimento">📥 Recebimento</option>
+                      <option value="Armazenagem">🏪 Armazenagem</option>
+                      <option value="Devolução">↩️ Devolução</option>
+                      <option value="Segregado">🔄 Segregado</option>
+                    </select>
                   </div>
                   
                   <div>
@@ -707,21 +712,6 @@ export default function ColetorAutoatendimento() {
                       placeholder="Ex: João Silva"
                       required
                     />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Seu Turno
-                    </label>
-                    <select
-                      value={turno}
-                      onChange={(e) => setTurno(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Manhã">🌅 Manhã (06:00 - 14:00)</option>
-                      <option value="Tarde">☀️ Tarde (14:00 - 22:00)</option>
-                      <option value="Noite">🌙 Noite (22:00 - 06:00)</option>
-                    </select>
                   </div>
                 </div>
               )}
@@ -796,7 +786,7 @@ export default function ColetorAutoatendimento() {
                 <li>Clique em "Retirar Coletor"</li>
                 <li>Busque pelo número do equipamento</li>
                 <li>Selecione o coletor desejado</li>
-                <li>Preencha sua matrícula e nome</li>
+                <li>Preencha seu setor e nome</li>
                 <li>Confirme a retirada</li>
               </ol>
             </div>
@@ -808,7 +798,7 @@ export default function ColetorAutoatendimento() {
               <ol className="list-decimal list-inside space-y-1">
                 <li><strong>Faça login como administrador</strong></li>
                 <li>Clique em "Devolver Coletor"</li>
-                <li>Busque pelo número ou matrícula</li>
+                <li>Busque pelo número ou setor</li>
                 <li>Selecione o coletor a devolver</li>
                 <li>Confirme a devolução</li>
                 <li>Pronto! Equipamento liberado</li>
