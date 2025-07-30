@@ -1,4 +1,4 @@
-// app/api/coletores/atualizar/route.ts - VERSÃO CORRIGIDA
+// app/api/coletores/atualizar/route.ts - VERSÃO SIMPLIFICADA
 import { NextRequest, NextResponse } from 'next/server';
 
 // ⚠️ SUBSTITUA PELA SUA URL COMPLETA DO GOOGLE APPS SCRIPT
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const linha = coletorId + 1; // Linha na planilha (pular cabeçalho)
     console.log(`[API Coletores] 📍 Coletor ${coletorId} vai para linha ${linha}`);
 
-    // ✅ MAPEAMENTO CORRETO - Ajustado para incluir manutenção
+    // ✅ MAPEAMENTO SIMPLIFICADO - Removidas colunas de turno/setor
     const atualizacoes: { range: string; value: any }[] = [];
     
     // COLUNA C: Status como TRUE/FALSE ou string para manutenção
@@ -56,14 +56,14 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // OUTRAS COLUNAS: Corrigir nomes dos campos
+    // ESTRUTURA DA PLANILHA COM SETOR:
+    // A: ID | B: Número | C: Disponível | D: Setor | E: Nome | F: Data Retirada | G: Previsão Retorno | H: Observações
     const mapeamentoColunas = {
-      colaborador: `D${linha}`,           // Coluna D: Matrícula
+      setor: `D${linha}`,                 // Coluna D: Setor (era Matrícula)
       nomeColaborador: `E${linha}`,       // Coluna E: Nome
-      turno: `F${linha}`,                 // Coluna F: Turno
-      dataRetirada: `G${linha}`,          // Coluna G: Data Retirada
-      dataPrevisaoRetorno: `H${linha}`,   // Coluna H: Previsão Retorno
-      observacoes: `I${linha}`            // Coluna I: Observações
+      dataRetirada: `F${linha}`,          // Coluna F: Data Retirada
+      dataPrevisaoRetorno: `G${linha}`,   // Coluna G: Previsão Retorno
+      observacoes: `H${linha}`            // Coluna H: Observações
     };
 
     // Definir tipo para as chaves de mapeamentoColunas
